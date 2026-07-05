@@ -1,0 +1,13 @@
+name = "Underground Villages, Stoneholm (Fabric/Forge/NeoForge)"
+filename = "underground_village-neoforge-1.21.1-2.0.jar"
+side = "both"
+
+[download]
+hash-format = "sha1"
+hash = "53e65e6e0be47e7ee23e5d52535a595b440a88d3"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 8172510
+project-id = 1123746

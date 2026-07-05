@@ -1,7 +1,16 @@
 [package]
-
-version = "3.0.0"
+name = "createcore-modpack-updater"
+version = "1.0.0"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Blocking HTTP client — matches sequential download requirement; json feature bundles serde_json
+ureq  = { version = "2", features = ["json"] }
+# Required for #[derive(Deserialize)] on the GitHub API response struct
+serde = { version = "1", features = ["derive"] }
+# Canonical Rust CSV parser — handles quoted fields and special characters correctly
+csv   = "1"
+# Ergonomic error propagation with .context() for readable CLI failure messages
+anyhow = "1"

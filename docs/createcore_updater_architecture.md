@@ -20,11 +20,11 @@ Data Source: A comma-separated values (.csv) file that is kept up to date on the
 
 CSV Schema Structure: The CSV uses three specific columns:
 
-- FileName: The exact name of the .jar file to be saved to disk.
+- Mod Name Text: The exact name of the .jar file to be saved to disk.
 
-- Url: The direct CDN download link.
+- CDN Release URL: The direct CDN download link.
 
-- Side: Specifies the target environment (e.g., Client, Server, Both).
+- Client-Server Tag: Specifies the target environment (e.g., Client, Server, Both).
 
 Execution Flow:
 

@@ -1,0 +1,13 @@
+name = "Silent Gear: Shuriken"
+filename = "SGAddon_Shuriken-1.21.1-1.0.0.jar"
+side = "both"
+
+[download]
+hash-format = "sha1"
+hash = "e3988160259b5c8eeec48709a00ef91b15bdd2dc"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 8205825
+project-id = 1565789

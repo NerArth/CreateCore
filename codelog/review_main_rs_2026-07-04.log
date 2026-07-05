@@ -1,0 +1,153 @@
+# Code Review Log — src/main.rs
+## CreateCore Modpack Updater
+Reviewer: Antigravity (automated review)
+Date: 2026-07-04
+File reviewed: src/main.rs (500 lines)
+Status at review: Pre-compilation, no cargo check run yet.
+
+---
+
+## Summary
+
+The code is broadly correct in structure and logic. No hard compiler errors are immediately
+obvious EXCEPT for one identified pattern (E-01) that is very likely to prevent compilation.
+Several additional warnings and design notes are listed below.
+
+---
+
+## Findings
+
+
+### [E-01] -- Likely Compiler Error: `match` on `usize` with guard arm ordering
+Severity: Error (will not compile)
+Location: sanity_check(), lines 116-161
+
+    match found_count {
+        n if n >= 2 => {}   // guard arm -- FIRST
+        1 => { ... }        // specific arm -- SECOND
+        _ => { ... }        // catch-all
+    }
+
+The problem: found_count is of type usize. In Rust, a guard arm (n if n >= 2) does NOT
+contribute to exhaustiveness checking. The compiler cannot prove statically that n >= 2
+covers all values >= 2, so it treats the arm as potentially non-exhaustive. Placing the
+guarded arm BEFORE the specific literal arm (1 =>) causes the literal arm to be considered
+unreachable -- the compiler will likely emit an 'unreachable_patterns' error.
+
+Suggested fix: Replace the match with a plain if/else if/else chain:
+
+    if found_count >= 2 {
+        // full confidence, proceed silently
+    } else if found_count == 1 {
+        // single marker warning + countdown
+    } else {
+        // no markers -- y/N prompt
+    }
+
+
+### [W-01] -- Warning: ureq HTTP status errors produce raw message strings
+Severity: Warning (runtime UX, not a crash)
+Location: download_file() lines 366-369; detect_latest_version() lines 171-174
+
+In ureq 2.x, a non-2xx HTTP response (404, 429, etc.) surfaces as
+Err(ureq::Error::Status(code, response)). The .with_context() wrapping catches it correctly
+and propagates it as an anyhow error -- nothing crashes. However, the failure message the
+user sees will be a raw ureq display string such as:
+    "HTTP request failed for 'mod.jar': status code: 404"
+rather than a cleaner formatted message. This is cosmetic only.
+
+Suggested improvement (post-compilation): Match on ureq::Error::Status(code, _) explicitly
+to produce a cleaner message such as: "Server returned HTTP 404 for 'mod.jar'".
+
+
+### [W-02] -- Warning: splitn(3, '.') silently skips four-part version strings
+Severity: Warning (edge case, minor)
+Location: parse_csv_version(), lines 200-203
+
+splitn(3, '.') on "3.0.0" correctly yields ["3", "0", "0"].
+If a future filename were CreateCore-v3.0.0.1.csv (four-part version), the third split
+segment would be "0.1" which fails u32::parse() and returns None -- silently ignoring the
+entry. This is acceptable given the vMAJOR.MINOR.PATCH naming convention, but should be
+documented with an inline comment so future maintainers understand the assumption.
+
+No immediate action required.
+
+
+### [W-03] -- Warning: Iterating &["mods", "config"] yields &&str items
+Severity: Warning (Clippy lint candidate)
+Location: offer_backup(), line 275
+
+    for src_name in &["mods", "config"] {
+
+This yields &&str (double reference). It works correctly in practice (Rust auto-derefs
+for AsRef<Path> etc.) but may trigger a Clippy lint (needless_borrow or similar).
+Cleaner alternatives:
+    for src_name in ["mods", "config"] {        // owned array iteration (Rust 2021)
+    for src_name in ["mods", "config"].iter() { // explicit iter
+
+
+### [W-04] -- Warning: read_line() blocks stdin -- acceptable but noted
+Severity: Warning (non-interactive usage)
+Location: read_line(), lines 453-456
+
+The function blocks waiting for stdin input. In server mode the sanity check and backup
+prompt are never reached, so this is a non-issue for the --server path. On the client,
+if the binary were ever piped or run non-interactively, it would block indefinitely.
+This is standard CLI behaviour and not a bug, but worth noting for future
+non-interactive (--yes / --no-backup) flag support.
+
+
+### [N-01] -- Note: std::process::exit(1) inside a Result-returning function
+Severity: Note (design style)
+Location: run(), lines 97-99
+
+    if !report.failed.is_empty() {
+        std::process::exit(1);
+    }
+    Ok(()) // <- never reached in the failure case
+
+Functionally correct, but mixing process::exit() inside a Result<()>-returning function
+makes line 101 dead code in the failure path. The idiomatic Rust pattern for a CLI tool
+is to return ExitCode from main(), or keep all exit() calls only in main(). Style note only.
+
+
+### [N-02] -- Note: format_unix_utc year loop performance
+Severity: Note (no action needed)
+Location: format_unix_utc(), lines 461-495
+
+The year-counting loop iterates ~56 times for dates near 2026 (starting from 1970).
+Called once per run at program exit. Absolutely negligible. Noted for completeness.
+
+
+### [N-03] -- Note: LOG_PATH is a relative path -- relies on current_dir() being instance root
+Severity: Note (documentation)
+Location: constant LOG_PATH line 24; used in append_log() and sanity_check()
+
+The path "logs/createcoreupdater.log" is resolved relative to current_dir() at runtime.
+This is correct by the instance-root execution model, but should be explicitly documented
+with an inline comment on the constant, as it is load-bearing for both the sanity check
+marker detection and the log writer.
+
+
+---
+
+## Issue Count Summary
+
+  ID    | Severity | Area                  | Description
+  ------+----------+-----------------------+----------------------------------------------------
+  E-01  | ERROR    | sanity_check()        | match guard arm ordering -- unreachable pattern
+  W-01  | Warning  | download_file()       | ureq HTTP error messages are raw, not formatted
+  W-02  | Warning  | parse_csv_version()   | Four-part version strings silently skipped
+  W-03  | Warning  | offer_backup()        | &&str iteration -- Clippy lint candidate
+  W-04  | Warning  | read_line()           | Blocking stdin in non-interactive environments
+  N-01  | Note     | run()                 | process::exit mixed into Result-returning function
+  N-02  | Note     | format_unix_utc()     | Year loop -- negligible
+  N-03  | Note     | LOG_PATH constant     | Relative path assumption undocumented
+
+---
+
+## Recommendation
+
+E-01 must be fixed before compilation will succeed.
+All other findings are warnings or design notes for consideration at or after compilation.
+The code is otherwise well-structured and logically sound.

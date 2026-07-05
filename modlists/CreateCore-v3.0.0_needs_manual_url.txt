@@ -1,0 +1,12 @@
+# These mods have no direct CDN URL and need a manual entry in the CSV.
+# Format: Mod Name  |  jar filename
+
+Cloth Config API (Fabric/Forge/NeoForge)  |  cloth-config-15.0.140-neoforge.jar
+Create: Better Villager (Fabric/Forge/NeoForge)  |  create_better_villagers-1.3.2.jar
+Create: Dimension, Steamworks Realm (Forge/NeoForge)  |  create_dimension-1.0.4.jar
+Create: Fuel & Water Information  |  cfwinfo-1.9.0.jar
+Curios API (Forge/NeoForge)  |  curios-neoforge-9.5.1+1.21.1.jar
+Polymorph (Fabric/Forge/Quilt)  |  polymorph-neoforge-1.1.0+1.21.1.jar
+Simply Swords [Fabric & Forge]  |  simplyswords-neoforge-1.63.0-1.21.1.jar
+Steam 'n' Rails Neoforge  |  railways-0.2.0+neoforge-mc1.21.1.jar
+Underground Villages, Stoneholm (Fabric/Forge/NeoForge)  |  underground_village-neoforge-1.21.1-2.0.jar

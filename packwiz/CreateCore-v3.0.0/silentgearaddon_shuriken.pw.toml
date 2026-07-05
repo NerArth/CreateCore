@@ -1,0 +1,13 @@
+name = "Silent Gear: Shuriken Addon"
+filename = "SGAddon_Shuriken-1.21.1-1.0.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/aijsHNvJ/versions/W0dEzb60/SGAddon_Shuriken-1.21.1-1.0.0.jar"
+hash-format = "sha512"
+hash = "b42b3f1e7ac33b8b8916c4d539fe0a63e9d2cacc33b652b692eed8937fae1f1a3b0b88b42a437161ef9b6843b71084cbdd54b4e767a1ae439901aa44ef516052"
+
+[update]
+[update.modrinth]
+mod-id = "aijsHNvJ"
+version = "W0dEzb60"

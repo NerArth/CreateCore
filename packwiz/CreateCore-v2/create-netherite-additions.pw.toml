@@ -1,0 +1,13 @@
+name = "Create Stuff & Netherite Additions"
+filename = "create_sna-1.2-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/777GhN41/versions/yosj4p3v/create_sna-1.2-neoforge-1.21.1.jar"
+hash-format = "sha512"
+hash = "67893be27182012adfd2a2900966a6af3dc0cabdfcb54d5db6e4ba7ea595984f85a1c3a1cbe6d5a436cd29eeabe68880bacd35528406126a29fbd4238f6b8524"
+
+[update]
+[update.modrinth]
+mod-id = "777GhN41"
+version = "yosj4p3v"

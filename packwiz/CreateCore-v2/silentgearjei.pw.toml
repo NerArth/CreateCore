@@ -1,0 +1,13 @@
+name = "SilentGearJEI"
+filename = "silentgearjei-1.1.9.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/yiUlraa8/versions/Rpbwbrk7/silentgearjei-1.1.9.jar"
+hash-format = "sha512"
+hash = "ccc1999d8647e8f7c928cb4e97fb23801d7f4f34eef597ba6edd289b13a3a93564bc3207351ec17bd324c0d4181169d27c2fd1416d760af4285259780c2fbefb"
+
+[update]
+[update.modrinth]
+mod-id = "yiUlraa8"
+version = "Rpbwbrk7"

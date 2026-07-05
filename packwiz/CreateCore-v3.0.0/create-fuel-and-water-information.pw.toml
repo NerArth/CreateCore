@@ -1,0 +1,13 @@
+name = "Create: Fuel & Water Information"
+filename = "cfwinfo-1.9.0.jar"
+side = "both"
+
+[download]
+hash-format = "sha1"
+hash = "0b3f435b38e58c22f1fea614f796d3e8ea38052a"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 8193610
+project-id = 1023209

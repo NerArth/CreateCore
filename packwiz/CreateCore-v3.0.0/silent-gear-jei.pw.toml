@@ -1,0 +1,13 @@
+name = "Silent Gear JEI"
+filename = "silentgearjei-1.1.9.jar"
+side = "both"
+
+[download]
+hash-format = "sha1"
+hash = "01a8bc92e223c10f5b08053681ff2303b1d58c59"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 8193740
+project-id = 1463706

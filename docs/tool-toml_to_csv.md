@@ -1,0 +1,1 @@
+Usage is e.g. `python tools\toml_to_csv.py packwiz\CreateCore-v2 modlists\CreateCore-v2.0.0.csv`
