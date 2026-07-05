@@ -84,15 +84,11 @@ def build_mod_table(toml_dir: str) -> tuple:
     Reads all .pw.toml files and returns:
       - A deduplicated list of mod records (dicts with keys matching CSV columns)
       - A list of mod names that need a manual URL
-
-    Deduplication key: the output 'filename' field.
-    Priority: CurseForge entry wins as the canonical version record; however,
-    if the CurseForge entry has no URL, we check if a Modrinth pair exists for
-    the same filename and use its URL instead.
     """
-    # Pass 1: bucket all entries by their output filename.
-    buckets: dict = {}
+    buckets = {}
+    modrinth_map = {}
 
+    # Pass 1: Bucket by filename and index Modrinth entries by name
     for fname in sorted(os.listdir(toml_dir)):
         if not fname.endswith(".pw.toml"):
             continue
@@ -100,58 +96,65 @@ def build_mod_table(toml_dir: str) -> tuple:
         data = load_toml(path)
         jar = data.get("filename", "")
         if not jar:
-            print(f"  [warn] Skipping {fname}: no 'filename' field.")
             continue
+        
         source = get_source(data)
         if jar not in buckets:
             buckets[jar] = {"modrinth": None, "curseforge": None, "_all": []}
         buckets[jar][source] = data
         buckets[jar]["_all"].append(fname)
+        
+        if source == "modrinth":
+            mod_name = data.get("name")
+            if mod_name:
+                modrinth_map[mod_name] = data
 
-    # Pass 2: resolve each bucket to a single canonical record.
+    # Pass 2: Resolve records.
+    # consumed_mr_jars: Modrinth jars borrowed by a CF-canonical bucket so we
+    # don't write a second row when we reach that Modrinth bucket later.
     records = []
     needs_manual = []
+    consumed_mr_jars: set = set()
 
     for jar, bucket in buckets.items():
+        # Skip Modrinth-only buckets that were already consumed as a partner.
+        if jar in consumed_mr_jars:
+            continue
+
         cf_data = bucket.get("curseforge")
         mr_data = bucket.get("modrinth")
-        all_files = bucket.get("_all", [])
 
-        if len(all_files) > 1:
-            print(f"  [dedup] '{jar}' found in {len(all_files)} files: {all_files}")
+        # CF entry with no direct URL: look for a same-name Modrinth partner,
+        # even if it's a different version (different jar filename/bucket).
+        if cf_data and not get_url(cf_data) and mr_data is None:
+            mod_name = cf_data.get("name")
+            if mod_name and mod_name in modrinth_map:
+                partner = modrinth_map[mod_name]
+                partner_jar = partner.get("filename", "")
+                print(
+                    f"  [warn]  '{mod_name}': CF version is '{jar}' but Modrinth "
+                    f"version is '{partner_jar}'. Using Modrinth URL — "
+                    f"check which version you intend to ship."
+                )
+                mr_data = partner
+                consumed_mr_jars.add(partner_jar)
 
-        # Use CurseForge entry as canonical (name, side, version) when present.
         canonical = cf_data if cf_data is not None else mr_data
+        if not canonical:
+            continue
+
         name = canonical.get("name", "Unknown")
-        side_raw = canonical.get("side", "both").lower()
-        side_tag = SIDE_MAP.get(side_raw, "Both")
+        side_tag = SIDE_MAP.get(canonical.get("side", "both").lower(), "Both")
 
-        # Determine URL and source label.
-        url = ""
-        source_label = "manual"
+        cf_url = get_url(cf_data) if cf_data else ""
+        mr_url = get_url(mr_data) if mr_data else ""
+        url = cf_url or mr_url
+        source_label = "curseforge" if cf_url else "modrinth"
 
-        if cf_data is not None:
-            cf_url = get_url(cf_data)
-            if cf_url:
-                url = cf_url
-                source_label = "curseforge"
-            elif mr_data is not None:
-                # Use Modrinth URL as a stand-in for the CurseForge-canonical jar.
-                url = get_url(mr_data)
-                source_label = "modrinth"
-                if url:
-                    print(f"  [info]  '{name}': using Modrinth URL for CurseForge-canonical version.")
-            if not url:
-                print(f"  [skip]  '{name}' ({jar}): CurseForge-only, no direct URL. Needs manual entry.")
-                needs_manual.append(f"{name}  |  {jar}")
-                continue
-        elif mr_data is not None:
-            url = get_url(mr_data)
-            source_label = "modrinth"
-            if not url:
-                print(f"  [skip]  '{name}' ({jar}): Modrinth entry has no URL. Needs manual entry.")
-                needs_manual.append(f"{name}  |  {jar}")
-                continue
+        if not url:
+            print(f"  [skip]  '{name}' ({jar}): no direct URL. Needs manual entry.")
+            needs_manual.append(f"{name}  |  {jar}")
+            continue
 
         records.append({
             "Mod Name Text":     name,

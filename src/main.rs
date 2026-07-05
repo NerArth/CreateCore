@@ -349,11 +349,40 @@ fn download_mods(mods: &[ModEntry]) -> Result<(Vec<String>, Vec<(String, String)
 
 /// Derives a safe filename to save to disk from a CDN URL.
 ///
-/// Takes the path segment after the last `/` and strips any query string.
-/// Example: `.../linkage-0.2.5.jar?mr_download_reason=standalone` → `linkage-0.2.5.jar`
+/// Takes the path segment after the last `/`, strips any query string, and
+/// percent-decodes the result so that URLs like
+/// `.../fzzy_config-0.7.6%2B1.21%2Bneoforge.jar` produce the correct
+/// on-disk name `fzzy_config-0.7.6+1.21+neoforge.jar`.
 fn derive_filename(url: &str) -> String {
     let path_part = url.split('/').next_back().unwrap_or("unknown.jar");
-    path_part.split('?').next().unwrap_or(path_part).to_string()
+    let raw = path_part.split('?').next().unwrap_or(path_part);
+    percent_decode(raw)
+}
+
+/// Decodes percent-encoded characters in a URL path segment.
+///
+/// Only decodes sequences of the form `%XX` where XX is a valid hex byte.
+/// Non-ASCII bytes are passed through as-is; this is sufficient for jar
+/// filenames which are always ASCII.
+fn percent_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = String::with_capacity(s.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            // SAFETY: bytes[i+1..i+3] is always valid ASCII hex digits or we skip.
+            if let Some(hex) = s.get(i + 1..i + 3) {
+                if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                    out.push(byte as char);
+                    i += 3;
+                    continue;
+                }
+            }
+        }
+        out.push(bytes[i] as char);
+        i += 1;
+    }
+    out
 }
 
 /// Downloads a single file from `url` and streams it to `mods/<filename>`.
